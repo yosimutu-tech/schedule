@@ -6,13 +6,174 @@
 <title>スケジュール管理</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:sans-serif;background:#f7f4f0;min-height:100vh;color:#2d2520}
-header{background:#fff;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,0.1);display:flex;align-items:center;gap:10px}
-header h1{font-size:1.3rem;font-weight:700;color:#b5623b}
-.container{max-width:800px;margin:20px auto;padding:0 12px}
-.cal-card{background:#fff;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,0.08);overflow:hidden;margin-bottom:20px}
-.cal-head{background:#d4845a;color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
-.cal-head h2{font-size:1.2rem;font-weight:700}
-.nav{background:rgba(255,255,255,0.3);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:1.2rem;cursor:pointer}
-.wdays{display:grid;grid-template-columns:repeat(7,1fr);background:#f2e4d8;padding:6px 8px}
-.wday{text
+body{font-family:sans-serif;background:#f7f4f0;color:#333}
+h1{text-align:center;padding:16px;background:#d4845a;color:#fff;font-size:1.2rem}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;background:#e8a07a;padding:10px 16px}
+.cal-nav button{background:#fff;border:none;border-radius:8px;padding:6px 16px;font-size:1rem;cursor:pointer;color:#b5623b;font-weight:bold}
+.cal-nav span{color:#fff;font-weight:bold;font-size:1rem}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);background:#f2e4d8;text-align:center}
+.weekdays div{padding:8px 0;font-size:0.75rem;font-weight:bold;color:#b5623b}
+.weekdays div:first-child{color:#c0392b}
+.weekdays div:last-child{color:#2980b9}
+.days{display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #ddd;border-top:1px solid #ddd}
+.day{min-height:60px;border-right:1px solid #ddd;border-bottom:1px solid #ddd;padding:4px;background:#fff;cursor:pointer}
+.day:hover{background:#fff3ee}
+.day.empty{background:#fafafa;cursor:default}
+.day.today .dnum{background:#d4845a;color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.day.sun .dnum{color:#c0392b}
+.day.sat .dnum{color:#2980b9}
+.dnum{font-size:0.8rem;width:24px;height:24px;display:flex;align-items:center;justify-content:center}
+.evdot{background:#d4845a;color:#fff;font-size:0.55rem;padding:1px 3px;border-radius:4px;margin-top:1px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.today-box{background:#fff;margin:12px;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.today-box h3{color:#b5623b;font-size:0.95rem;margin-bottom:10px}
+.tev{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid #f0e8e0}
+.tev:last-child{border:none}
+.tev-dot{width:8px;height:8px;background:#d4845a;border-radius:50%;margin-top:4px;flex-shrink:0}
+.tev-title{font-size:0.88rem;font-weight:500}
+.tev-time{font-size:0.75rem;color:#999;margin-top:2px}
+.no-ev{text-align:center;color:#aaa;font-size:0.85rem;padding:8px 0}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;justify-content:center;align-items:flex-end}
+.overlay.show{display:flex}
+.modal{background:#fff;width:100%;max-width:500px;border-radius:20px 20px 0 0;padding:20px;max-height:80vh;overflow-y:auto}
+.modal h3{color:#b5623b;font-size:1rem;margin-bottom:14px;text-align:center}
+.ev-item{display:flex;align-items:center;background:#fff3ee;border-radius:8px;padding:8px 12px;margin-bottom:6px}
+.ev-time{font-size:0.72rem;color:#b5623b;font-weight:bold;margin-right:8px;min-width:36px}
+.ev-title{flex:1;font-size:0.88rem}
+.ev-del{background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:0 4px}
+.form-label{font-size:0.78rem;color:#888;margin-top:12px;margin-bottom:4px;display:block}
+.form-input{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:0.9rem;outline:none;font-family:sans-serif}
+.form-input:focus{border-color:#d4845a}
+textarea.form-input{min-height:56px;resize:vertical}
+.add-btn{width:100%;margin-top:14px;padding:13px;background:#d4845a;color:#fff;border:none;border-radius:12px;font-size:1rem;font-weight:bold;cursor:pointer}
+.add-btn:active{background:#b5623b}
+.close-btn{display:block;width:100%;margin-top:10px;padding:10px;background:#f0e8e0;color:#888;border:none;border-radius:12px;font-size:0.9rem;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>📅 スケジュール管理</h1>
+<div class="cal-nav">
+  <button onclick="changeMonth(-1)">◀</button>
+  <span id="mlabel"></span>
+  <button onclick="changeMonth(1)">▶</button>
+</div>
+<div class="weekdays">
+  <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+</div>
+<div class="days" id="days"></div>
+<div class="today-box">
+  <h3 id="today-label">今日の予定</h3>
+  <div id="today-list"></div>
+</div>
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3 id="modal-title"></h3>
+    <div id="modal-list"></div>
+    <div>
+      <span class="form-label">タイトル *</span>
+      <input class="form-input" type="text" id="inp-title" placeholder="例：病院、買い物…" maxlength="30">
+      <span class="form-label">時間（任意）</span>
+      <input class="form-input" type="time" id="inp-time">
+      <span class="form-label">メモ（任意）</span>
+      <textarea class="form-input" id="inp-memo" placeholder="詳細メモ"></textarea>
+      <button class="add-btn" onclick="addEv()">＋ 追加する</button>
+      <button class="close-btn" onclick="closeModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+<script>
+var cy,cm,sel;
+var now=new Date();
+var data={};
+try{data=JSON.parse(localStorage.getItem('sch2')||'{}');}catch(e){}
+function key(y,m,d){return y+'-'+(m<9?'0':'')+(m+1)+'-'+(d<10?'0':'')+d;}
+function save(){try{localStorage.setItem('sch2',JSON.stringify(data));}catch(e){}}
+function init(){cy=now.getFullYear();cm=now.getMonth();draw();drawToday();}
+function draw(){
+  document.getElementById('mlabel').textContent=cy+'年 '+(cm+1)+'月';
+  var g=document.getElementById('days');
+  g.innerHTML='';
+  var fd=new Date(cy,cm,1).getDay();
+  var dm=new Date(cy,cm+1,0).getDate();
+  var nm=(cy===now.getFullYear()&&cm===now.getMonth());
+  for(var i=0;i<fd;i++){var e=document.createElement('div');e.className='day empty';g.appendChild(e);}
+  for(var d=1;d<=dm;d++){
+    var dow=(fd+d-1)%7;
+    var isT=nm&&d===now.getDate();
+    var k=key(cy,cm,d);
+    var evts=data[k]||[];
+    var cell=document.createElement('div');
+    cell.className='day'+(isT?' today':'')+(dow===0?' sun':'')+(dow===6?' sat':'');
+    var num=document.createElement('div');
+    num.className='dnum';num.textContent=d;cell.appendChild(num);
+    for(var j=0;j<Math.min(evts.length,2);j++){
+      var dot=document.createElement('div');dot.className='evdot';dot.textContent=evts[j].title;cell.appendChild(dot);
+    }
+    if(evts.length>2){var m2=document.createElement('div');m2.className='evdot';m2.style.background='#aaa';m2.textContent='+'+(evts.length-2);cell.appendChild(m2);}
+    (function(dd){cell.onclick=function(){openModal(dd);};})(d);
+    g.appendChild(cell);
+  }
+}
+function drawToday(){
+  var k=key(now.getFullYear(),now.getMonth(),now.getDate());
+  var evts=data[k]||[];
+  document.getElementById('today-label').textContent=(now.getMonth()+1)+'月'+now.getDate()+'日の予定';
+  var l=document.getElementById('today-list');
+  if(evts.length===0){l.innerHTML='<div class="no-ev">今日の予定はありません</div>';return;}
+  l.innerHTML='';
+  var s=evts.slice().sort(function(a,b){return(a.time||'99:99')>(b.time||'99:99')?1:-1;});
+  s.forEach(function(ev){
+    var d=document.createElement('div');d.className='tev';
+    d.innerHTML='<div class="tev-dot"></div><div><div class="tev-title">'+ev.title+'</div>'+(ev.time?'<div class="tev-time">'+ev.time+'</div>':'')+'</div>';
+    l.appendChild(d);
+  });
+}
+function openModal(d){
+  sel={y:cy,m:cm,d:d};
+  document.getElementById('modal-title').textContent=(cm+1)+'月'+d+'日の予定';
+  document.getElementById('inp-title').value='';
+  document.getElementById('inp-time').value='';
+  document.getElementById('inp-memo').value='';
+  drawModalList();
+  document.getElementById('overlay').className='overlay show';
+}
+function drawModalList(){
+  var k=key(sel.y,sel.m,sel.d);
+  var evts=data[k]||[];
+  var l=document.getElementById('modal-list');
+  if(evts.length===0){l.innerHTML='<div class="no-ev" style="margin-bottom:10px">まだ予定がありません</div>';return;}
+  l.innerHTML='';
+  var s=evts.slice().sort(function(a,b){return(a.time||'99:99')>(b.time||'99:99')?1:-1;});
+  s.forEach(function(ev,i){
+    var item=document.createElement('div');item.className='ev-item';
+    item.innerHTML='<span class="ev-time">'+(ev.time||'')+'</span><span class="ev-title">'+ev.title+(ev.memo?' — '+ev.memo:'')+'</span><button class="ev-del" onclick="delEv('+i+')">🗑</button>';
+    l.appendChild(item);
+  });
+}
+function addEv(){
+  var t=document.getElementById('inp-title').value.trim();
+  if(!t){document.getElementById('inp-title').focus();return;}
+  var k=key(sel.y,sel.m,sel.d);
+  if(!data[k])data[k]=[];
+  data[k].push({title:t,time:document.getElementById('inp-time').value,memo:document.getElementById('inp-memo').value.trim()});
+  save();drawModalList();draw();
+  if(sel.d===now.getDate()&&sel.m===now.getMonth()&&sel.y===now.getFullYear())drawToday();
+  document.getElementById('inp-title').value='';
+  document.getElementById('inp-time').value='';
+  document.getElementById('inp-memo').value='';
+}
+function delEv(i){
+  var k=key(sel.y,sel.m,sel.d);
+  var s=data[k].slice().sort(function(a,b){return(a.time||'99:99')>(b.time||'99:99')?1:-1;});
+  var x=s[i];
+  var ri=data[k].findIndex(function(e){return e.title===x.title&&e.time===x.time&&e.memo===x.memo;});
+  if(ri!==-1)data[k].splice(ri,1);
+  if(data[k].length===0)delete data[k];
+  save();drawModalList();draw();drawToday();
+}
+function closeModal(){document.getElementById('overlay').className='overlay';}
+document.getElementById('overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+function changeMonth(d){cm+=d;if(cm>11){cm=0;cy++;}if(cm<0){cm=11;cy--;}draw();}
+init();
+</script>
+</body>
+</html>
